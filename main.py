@@ -5,31 +5,42 @@ from mastodon import Mastodon
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import re
-
+import libvirt_test
+import cv2
+import pytesseract
+            
+# stream.send(string_to_send)
+# stream.finish()
 load_dotenv()
 
-# Register your app - only needs to be done once
-'''
-mastodon = Mastodon.create_app(
-     'pytooterapp',
-     api_base_url = 'https://wetdry.world',
-     to_file = 'pytooter_clientcred.secret'
-)
-'''
 
-# Log in - either every time, or use persisted
+# # Register your app - only needs to be done once
+# '''
+# mastodon = Mastodon.create_app(
+#      'pytooterapp',
+#      api_base_url = 'https://wetdry.world',
+#      to_file = 'pytooter_clientcred.secret'
+# )
+# '''
+# print(os.getenv("BOT_ACCESS_TOKEN"))
+# Log in 
 mastodon = Mastodon(
-    access_token=os.getenv('BOT_ACCESS_TOKEN'),
+    access_token=os.getenv("BOT_ACCESS_TOKEN"),
     api_base_url='https://wetdry.world'
 )
 
 def post_image_and_log_response():
     # Post the image
-    media = mastodon.media_post('./placeholder.png', 'image/png', description="placeholder")
-    status = mastodon.status_post(status='', media_ids=[media], visibility='unlisted')
+    media_filename = f"./{libvirt_test.grab_screenshot()}"
+    print(f"screenshotted {media_filename}")
+    img = cv2.imread(media_filename)
+    ocr = "[automatic] OCR of the screenshot: \n" + pytesseract.image_to_string(img)
+    media = mastodon.media_post(media_filename, 'image/png', description=ocr)
+    status = mastodon.status_post(status='', media_ids=[media], visibility='public')
 
     # Wait for an hour
-    time.sleep(60)
+    time.sleep((24 * 3600) - (15 * 60))
+    # time.sleep(60)
 
     # Get the responses
     notifications = mastodon.notifications()
@@ -55,11 +66,15 @@ def post_image_and_log_response():
         if plain_text.startswith('!ctrl'):
             print("CONTROL")
             print(plain_text[6]) # Print the first character after '!ctrl'
+            libvirt_test.control_key(plain_text[6])
         elif plain_text.startswith('!enter'):
             print("ENTER")
+            libvirt_test.hit_enter()
         elif plain_text.startswith('!cmd'):
             print("COMMAND")
-            print(plain_text[5:]) # Print everything after '!cmd '
+            print(plain_text[5:])
+            libvirt_test.run_command(plain_text[5:])
+            
         else:
             print(f"Most favorited response: {plain_text}")
             # print(f"Most favorited response: {most_favorited_response['status']['content']}")
@@ -69,4 +84,4 @@ def post_image_and_log_response():
 # Run the bot
 while True:
     post_image_and_log_response()
-# mastodon.toot('api test')
+    time.sleep(15 * 60)
