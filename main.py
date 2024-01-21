@@ -28,6 +28,7 @@ print(os.getenv("BOT_ACCESS_TOKEN"))
 mastodon = Mastodon(
     access_token=os.getenv("BOT_ACCESS_TOKEN"),
     api_base_url='https://fedi.computernewb.com'
+    # api_base_url='https://wetdry.world'
 )
 
 # def parse_command(content):
@@ -89,12 +90,13 @@ def post_image_and_log_response():
     img = cv2.imread(media_filename)
     ocr = "[automatic] OCR of the screenshot: \n" + pytesseract.image_to_string(img)
     media = mastodon.media_post(media_filename, 'image/png', description=ocr[:1499])
-    status = mastodon.status_post(status='', media_ids=[media], visibility='public')
+    status = mastodon.status_post(status='', media_ids=[media], visibility='unlisted')
     
 
     # Wait for an hour
     # time.sleep((2 * 3600) - (15 * 60))
     valid_responses = handle_mentions(status['id'], (2 * 3600) - (15 * 60))
+    # valid_responses = handle_mentions(status['id'], 20)
     # time.sleep(60 * 5)
     for response in valid_responses:
         response_status = mastodon.status(response['response_id'])
@@ -112,7 +114,7 @@ def post_image_and_log_response():
     # Find the most favorited response
     if valid_responses:
         max_faves = max(response['favourites_count'] for response in valid_responses)
-        top_responses = [response for response in valid_responses if response['status']['favourites_count'] == max_faves]
+        top_responses = [response for response in valid_responses if response['favourites_count'] == max_faves]
         print(f'top responses: {top_responses}')
         most_favorited_response = random.choice(top_responses)
         
@@ -135,7 +137,7 @@ def post_image_and_log_response():
         
         print(f"Most favorited response: {plain_text}")
         
-        author_username = most_favorited_response['status']['account']['username']
+        author_username = most_favorited_response['username']
         mastodon.status_post(f"Selected response:\n{plain_text}\nposted by @{author_username}\nPosting a screenshot in 15 minutes!", visibility='public')
 
         if plain_text.startswith('!ctrl'):
