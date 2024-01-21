@@ -26,7 +26,7 @@ load_dotenv()
 # Log in 
 mastodon = Mastodon(
     access_token=os.getenv("BOT_ACCESS_TOKEN"),
-    api_base_url='https://wetdry.world'
+    api_base_url='https://fedi.computernewb.com'
 )
 
 def post_image_and_log_response():
@@ -39,15 +39,17 @@ def post_image_and_log_response():
     status = mastodon.status_post(status='', media_ids=[media], visibility='public')
 
     # Wait for an hour
-    time.sleep((24 * 3600) - (15 * 60))
-    # time.sleep(60)
+    time.sleep((2 * 3600) - (15 * 60))
+    # time.sleep(60 * 5)
 
     # Get the responses
     notifications = mastodon.notifications()
 
     # Filter responses to only mentions that are replies to our status
-    responses = [n for n in notifications if n['type'] == 'mention' and n['status']['in_reply_to_id'] == status['id']]
-
+    responses = [n for n in notifications if n['type'] == 'mention' and n['status']['in_reply_to_id'] == status['id'] and any(keyword in n['status']['content'] for keyword in ['!ctrl', '!enter', '!cmd']) and not any(keyword in n['status']['content'] for keyword in ['shutdown', 'masscan', 'nmap'])]
+    # FIXME: we should really check if the response starts with '!' after all the mentions
+    # this might break in weird ways later
+    
     # Find the most favorited response
     if responses:
         max_faves = max(response['status']['favourites_count'] for response in responses)
@@ -57,10 +59,15 @@ def post_image_and_log_response():
        # Extract the plain text from the HTML content
         soup = BeautifulSoup(most_favorited_response['status']['content'], 'html.parser')
         plain_text = soup.get_text()
-
-       # Remove mentions
-        plain_text = re.sub(r'@\w+', '', plain_text).strip()
-
+        plain_text = '!' + plain_text.split('!', 1)[1].strip()
+        
+        soup = BeautifulSoup(plain_text, 'html.parser')
+        for link in soup.findAll('a'):
+            link.replace_with(link.get('href'))
+        plain_text = str(soup)
+        plain_text = plain_text.replace("&amp;", "&")
+        plain_text = plain_text.replace("–", "--")
+        
         print(f"Most favorited response: {plain_text}")
 
         if plain_text.startswith('!ctrl'):
@@ -85,3 +92,4 @@ def post_image_and_log_response():
 while True:
     post_image_and_log_response()
     time.sleep(15 * 60)
+    # time.sleep(60)
