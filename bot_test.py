@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+print(os.getenv("BOT_ACCESS_TOKEN"))
 
 # Initialize Mastodon API client
 mastodon = Mastodon(
@@ -24,7 +25,7 @@ def fetch_and_process_responses():
 
     # Get the responses to the last post
     notifications = mastodon.notifications()
-    responses = [n for n in notifications if n['type'] == 'mention' and n['status']['in_reply_to_id'] == last_status['id'] and not any(keyword in n['status']['content'] for keyword in ['shutdown', 'masscan', 'nmap'])]
+    responses = [n for n in notifications if n['type'] == 'mention' and n['status']['in_reply_to_id'] == last_status['id'] and not any(keyword in n['status']['content'] for keyword in ['shutdown', 'masscan', 'nmap']) and "!" in n['status']['content']]
 
     # Process the responses
     for response in responses:

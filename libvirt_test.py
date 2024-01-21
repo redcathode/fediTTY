@@ -2,7 +2,7 @@ import libvirt
 import time
 from datetime import datetime
 
-
+# TODO: DRY!!!
 
 
 # this is probably the wrong way to do this.
@@ -164,6 +164,19 @@ def run_command(cmd, delayTime=5):
     print(f"executing cmd {cmd}")
     send_string_to_vm(domain, cmd)
     domain.sendKey(0, 0, [KEY_ENTER], 1)
+    time.sleep(delayTime)
+    conn.close()
+    # return grab_screenshot(conn, domain)
+    
+def type_text(cmd, delayTime=5):
+    # Open connection to libvirt
+    conn = libvirt.open('qemu:///system')
+
+    # Find the domain by name
+    domain = conn.lookupByName('archlinux')
+
+    print(f"typing {cmd}")
+    send_string_to_vm(domain, cmd)
     time.sleep(delayTime)
     conn.close()
     # return grab_screenshot(conn, domain)
