@@ -9,6 +9,7 @@ import libvirt_interface
 import cv2
 import pytesseract
 from constants import *
+import utils
 
 load_dotenv()
 
@@ -33,13 +34,15 @@ mastodon = Mastodon(
 #     else:
 #         return None
 
-def handle_mentions(original_post_id, timer=6300):
+def handle_mentions(original_post_id):
     # notifications = mastodon.notifications()
     valid_responses = []
     start_time = time.time()
+    end_time = 0
     processed_mentions = set()
+    timer_inactive = True
     
-    while time.time() - start_time < timer:
+    while timer_inactive or end_time - time.time() >= 0:
         try:
             notifications = mastodon.notifications()
             for notification in notifications:
@@ -57,11 +60,16 @@ def handle_mentions(original_post_id, timer=6300):
                     # if that's something you're considering... please don't waste your time wasting mine.
                     if notification['status']['in_reply_to_id'] == original_post_id and any(keyword in plain_text for keyword in ['!cmd', '!enter', '!ctrl', '!type', '!key', '!tty']) and not any(keyword in plain_text for keyword in ['masscan', 'rm -rf /*', 'rm -fr /*', 'rm -rf / --no-preserve-root']):
                         # Post the parsed command response
+                        if timer_inactive:
+                            timer_inactive = False
+                            end_time = time.time() + TIME_DELAY_AFTER_FIRST_COMMENT
+                            
                         response_status = mastodon.status_post(
-                            status=f"Favorite this post to vote for the above command!",
+                            status=f"Favorite this post to vote for the above command!<br>Running the most liked command in {utils.format_seconds(int(end_time - time.time() + 1))}.",
                             in_reply_to_id=notification['status']['id'],
                             visibility=POST_VISIBILITY
                         )
+                        
                         # Store the response details
                         valid_responses.append({
                             'response_id': response_status['id'],
@@ -88,11 +96,7 @@ def post_image_and_log_response():
     ocr = "[automatic] OCR of the screenshot: \n" + pytesseract.image_to_string(img)
     media = mastodon.media_post(media_filename, 'image/png', description=ocr[:1499])
     status = mastodon.status_post(status='', media_ids=[media], visibility=POST_VISIBILITY)
-    
-
-    # Wait for an hour
-    # time.sleep((2 * 3600) - (15 * 60))
-    valid_responses = handle_mentions(status['id'], TIME_DELAY_AFTER_POSTING_SCREENSHOT)
+    valid_responses = handle_mentions(status['id'])
     # valid_responses = handle_mentions(status['id'], 20)
     # time.sleep(60 * 5)
     for response in valid_responses:
