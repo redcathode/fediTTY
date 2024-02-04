@@ -65,7 +65,7 @@ def handle_mentions(original_post_id):
                             end_time = time.time() + TIME_DELAY_AFTER_FIRST_COMMENT
                             
                         response_status = mastodon.status_post(
-                            status=f"Favorite this post to vote for the above command!<br>Running the most liked command in {utils.format_seconds(int(end_time - time.time() + 1))}.",
+                            status=f"Favorite this post to vote for the above command!\nRunning the most liked command in {utils.format_seconds(int(end_time - time.time() + 1))}.",
                             in_reply_to_id=notification['status']['id'],
                             visibility=POST_VISIBILITY
                         )
