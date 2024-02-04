@@ -179,7 +179,8 @@ def post_image_and_log_response():
 
 # Run the bot
 while True:
+    libvirt_interface.start_vm_if_not_running()
     post_image_and_log_response()
     time.sleep(TIME_DELAY_AFTER_RUNNING_COMMAND)
-    libvirt_interface.start_vm_if_not_running()
+    
     # time.sleep(60)
