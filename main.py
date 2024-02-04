@@ -181,4 +181,5 @@ def post_image_and_log_response():
 while True:
     post_image_and_log_response()
     time.sleep(TIME_DELAY_AFTER_RUNNING_COMMAND)
+    libvirt_interface.start_vm_if_not_running()
     # time.sleep(60)
