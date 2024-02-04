@@ -3,7 +3,6 @@ import time
 from datetime import datetime
 from constants import *
 
-# TODO: DRY!!!
 
 def getconn():
     conn = libvirt.open(LIBVIRT_ADDR)
@@ -26,35 +25,13 @@ def send_string_to_vm(domain, text):
                 # Press the key
                 domain.sendKey(0, 0, [keycode_info], 1)
                 time.sleep(0.05)
-                
-def control_key(text):
+    
+def start_vm_if_not_running():
     conn, domain = getconn()
-    text = text.lower()
-    keycode_info = char_to_keycode.get(text[0])
-    KEY_CTRL = 29
-    if keycode_info:
-        if isinstance(keycode_info, tuple):
-                # Press and hold the Shift key
-                domain.sendKey(0, 0, [KEY_CTRL, keycode_info[0], keycode_info[1]], 3)
-                time.sleep(0.1)
-                # pass
-        else:
-            # Press the key
-            domain.sendKey(0, 0, [KEY_CTRL, keycode_info], 2)
-            time.sleep(0.1)
-    time.sleep(5)
-    conn.close()
+    if domain.info()[0] != libvirt.VIR_DOMAIN_RUNNING:
+        domain.create()
+        time.sleep(60) # hack
                 
-def run_command(cmd, delayTime=5):
-    conn, domain = getconn()
-
-    KEY_ENTER = 28
-    print(f"executing cmd {cmd}")
-    send_string_to_vm(domain, cmd)
-    domain.sendKey(0, 0, [KEY_ENTER], 1)
-    time.sleep(delayTime)
-    conn.close()
-    # return grab_screenshot(conn, domain)
     
 def type_text(cmd, delayTime=5):
     # Open connection to libvirt
@@ -66,16 +43,19 @@ def type_text(cmd, delayTime=5):
     conn.close()
     # return grab_screenshot(conn, domain)
     
-def hit_enter():
-    conn, domain = getconn()
-    KEY_ENTER = 28
-    domain.sendKey(0, 0, [KEY_ENTER], 1)
-    time.sleep(5)
-    conn.close()
     
-def key():
-    """writes """
+def key(keys):
     conn, domain = getconn()
+    keys = keys.replace('+', ' ')
+    cmd_list = keys.strip().lower().split()
+    cmd_keycodes = []
+    for cmd in cmd_list:
+        if char_to_keycode.get(cmd):
+            cmd_keycodes.append(char_to_keycode.get(cmd))
+        elif special_keys_mapping.get(cmd):
+            cmd_keycodes.append(special_keys_mapping.get(cmd))
+    print(cmd_keycodes)
+    domain.sendKey(0, 0, cmd_keycodes, len(cmd_keycodes))
     
 
 def grab_screenshot():

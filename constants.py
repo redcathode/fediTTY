@@ -4,6 +4,10 @@ LIBVIRT_VM_NAME = "archlinux"
 INSTANCE_URL = 'https://wetdry.world'
 
 TIME_ANNOUNCEMENT_STRING = "15 minutes"
+# TIME_DELAY_AFTER_RUNNING_COMMAND = 15 * 60
+TIME_DELAY_AFTER_RUNNING_COMMAND = 30
+# TIME_DELAY_AFTER_POSTING_SCREENSHOT = (2 * 3600) - TIME_DELAY_AFTER_RUNNING_COMMAND
+TIME_DELAY_AFTER_POSTING_SCREENSHOT = 1
 POST_VISIBILITY = "unlisted"
 
 
@@ -118,6 +122,10 @@ non_letter_with_shift = {
 
 special_keys_mapping = {
     'shift': 42,
+    'esc': 1,
+    'ctrl': 29,
+    'leftctrl': 29,
+    'rightctrl': 97,
     'leftshift': 42,
     'rightshift': 54,
     'alt': 56,

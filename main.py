@@ -40,41 +40,48 @@ def handle_mentions(original_post_id, timer=6300):
     processed_mentions = set()
     
     while time.time() - start_time < timer:
-        notifications = mastodon.notifications()
-        for notification in notifications:
-            if notification['type'] == 'mention':
-                mention_id = notification['status']['id']
-                if mention_id in processed_mentions:
-                    continue  # Skip this mention if it has already been processed
-                content = notification['status']['content']
-                plain_text = content
-                soup = BeautifulSoup(content, 'html.parser')
-                plain_text = soup.get_text()
-                # really basic keyword filter that blocks people from just rm -rf'ing the whole disk or portscanning
-                # this is very, very, very easy to get around
-                # we're basically assuming that people won't try very hard to do anything bad
-                # if that's something you're considering... please don't waste your time wasting mine.
-                if notification['status']['in_reply_to_id'] == original_post_id and any(keyword in plain_text for keyword in ['!cmd', '!enter', '!ctrl', '!type']) and not any(keyword in plain_text for keyword in ['masscan', 'rm -rf /*', 'rm -fr /*', 'rm -rf / --no-preserve-root']):
-                    # Post the parsed command response
-                    response_status = mastodon.status_post(
-                        status=f"Favorite this post to vote for the above command!",
-                        in_reply_to_id=notification['status']['id'],
-                        visibility=POST_VISIBILITY
-                    )
-                    # Store the response details
-                    valid_responses.append({
-                        'response_id': response_status['id'],
-                        'original_comment_id': notification['status']['id'], 
-                        'username': notification['account']['username'],
-                        'favorites_count': 0
-                    })
-                    processed_mentions.add(mention_id)  
+        try:
+            notifications = mastodon.notifications()
+            for notification in notifications:
+                if notification['type'] == 'mention':
+                    mention_id = notification['status']['id']
+                    if mention_id in processed_mentions:
+                        continue  # Skip this mention if it has already been processed
+                    content = notification['status']['content']
+                    plain_text = content
+                    soup = BeautifulSoup(content, 'html.parser')
+                    plain_text = soup.get_text()
+                    # really basic keyword filter that blocks people from just rm -rf'ing the whole disk or portscanning
+                    # this is very, very, very easy to get around
+                    # we're basically assuming that people won't try very hard to do anything bad
+                    # if that's something you're considering... please don't waste your time wasting mine.
+                    if notification['status']['in_reply_to_id'] == original_post_id and any(keyword in plain_text for keyword in ['!cmd', '!enter', '!ctrl', '!type', '!key']) and not any(keyword in plain_text for keyword in ['masscan', 'rm -rf /*', 'rm -fr /*', 'rm -rf / --no-preserve-root']):
+                        # Post the parsed command response
+                        response_status = mastodon.status_post(
+                            status=f"Favorite this post to vote for the above command!",
+                            in_reply_to_id=notification['status']['id'],
+                            visibility=POST_VISIBILITY
+                        )
+                        # Store the response details
+                        valid_responses.append({
+                            'response_id': response_status['id'],
+                            'original_comment_id': notification['status']['id'], 
+                            'username': notification['account']['username'],
+                            'favorites_count': 0
+                        })
+                        processed_mentions.add(mention_id)  
+        except Exception as err:
+            print(f"error grabbing notifs: {err}")
         time.sleep(5)
+        
+        # if len(valid_responses) == 0:
+            
 
     return valid_responses
 
 def post_image_and_log_response():
     # Post the image
+    
     media_filename = f"./{libvirt_interface.grab_screenshot()}"
     print(f"screenshotted {media_filename}")
     img = cv2.imread(media_filename)
@@ -85,7 +92,7 @@ def post_image_and_log_response():
 
     # Wait for an hour
     # time.sleep((2 * 3600) - (15 * 60))
-    valid_responses = handle_mentions(status['id'], 30)
+    valid_responses = handle_mentions(status['id'], TIME_DELAY_AFTER_POSTING_SCREENSHOT)
     # valid_responses = handle_mentions(status['id'], 20)
     # time.sleep(60 * 5)
     for response in valid_responses:
@@ -122,38 +129,54 @@ def post_image_and_log_response():
         for link in soup.findAll('a'):
             link.replace_with(link.get('href'))
         plain_text = str(soup)
-        plain_text = plain_text.replace("&amp;", "&")
         plain_text = plain_text.replace("–", "--")
+        plain_text = plain_text.replace("&amp;", "&")
+        plain_text = plain_text.replace("&lt;", "<")
+        plain_text = plain_text.replace("&gt;", ">")
+        plain_text = plain_text.replace("&quot;", "\"")
+        plain_text = plain_text.replace("&apos;", "'")
+        plain_text = plain_text.replace("&nbsp;", " ")  
         
         print(f"Most favorited response: {plain_text}")
         
+        
         author_username = most_favorited_response['username']
         mastodon.status_post(f"Selected response:\n{plain_text}\nposted by @{author_username}\nPosting a screenshot in {TIME_ANNOUNCEMENT_STRING}!", visibility=POST_VISIBILITY)
-
-        if plain_text.startswith('!ctrl'):
-            print("CONTROL")
-            print(plain_text[6]) # Print the first character after '!ctrl'
-            libvirt_interface.control_key(plain_text[6])
-        elif plain_text.startswith('!enter'):
-            print("ENTER")
-            libvirt_interface.hit_enter()
-        elif plain_text.startswith('!cmd'):
-            print("COMMAND")
-            print(plain_text[5:])
-            libvirt_interface.run_command(plain_text[5:])
-        elif plain_text.startswith('!type'):
-            print("TYPE")
-            print(plain_text[6:])
-            libvirt_interface.type_text(plain_text[6:])
-            
-        else:
-            print(f"Most favorited response: {plain_text}")
-            # print(f"Most favorited response: {most_favorited_response['status']['content']}")
+        commands = plain_text.split('\n')
+        for command in commands:
+            command = command.strip()
+            if command.startswith('!ctrl'):
+                print("CONTROL")
+                print(command[6]) # Print the first character after '!ctrl'
+                libvirt_interface.key(f'ctrl {command[6]}')
+            elif command.startswith('!enter'):
+                print("ENTER")
+                libvirt_interface.key('enter')
+            elif command.startswith('!cmd'):
+                print("COMMAND")
+                print(command[5:])
+                libvirt_interface.type_text(command[5:])
+                libvirt_interface.key('enter')
+            elif command.startswith('!type'):
+                print("TYPE")
+                print(command[6:])
+                libvirt_interface.type_text(command[6:])
+            elif plain_text.startswith('!tty'):
+                print("TTY")
+                libvirt_interface.key(f'ctrl alt f{command[4]}')
+            elif plain_text.startswith('!key'):
+                print("KEY")
+                print(command[5:])
+                libvirt_interface.key(command[5:])
+                
+            else:
+                print(f"Most favorited response: {plain_text}")
+                # print(f"Most favorited response: {most_favorited_response['status']['content']}")
     else:
         print("No responses received.")
 
 # Run the bot
 while True:
     post_image_and_log_response()
-    time.sleep(5)
+    time.sleep(TIME_DELAY_AFTER_RUNNING_COMMAND)
     # time.sleep(60)
