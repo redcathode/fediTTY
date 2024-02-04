@@ -55,7 +55,7 @@ def handle_mentions(original_post_id, timer=6300):
                     # this is very, very, very easy to get around
                     # we're basically assuming that people won't try very hard to do anything bad
                     # if that's something you're considering... please don't waste your time wasting mine.
-                    if notification['status']['in_reply_to_id'] == original_post_id and any(keyword in plain_text for keyword in ['!cmd', '!enter', '!ctrl', '!type', '!key']) and not any(keyword in plain_text for keyword in ['masscan', 'rm -rf /*', 'rm -fr /*', 'rm -rf / --no-preserve-root']):
+                    if notification['status']['in_reply_to_id'] == original_post_id and any(keyword in plain_text for keyword in ['!cmd', '!enter', '!ctrl', '!type', '!key', '!tty']) and not any(keyword in plain_text for keyword in ['masscan', 'rm -rf /*', 'rm -fr /*', 'rm -rf / --no-preserve-root']):
                         # Post the parsed command response
                         response_status = mastodon.status_post(
                             status=f"Favorite this post to vote for the above command!",
@@ -122,13 +122,15 @@ def post_image_and_log_response():
         
        # Extract the plain text from the HTML content
         soup = BeautifulSoup(original_comment['content'], 'html.parser')
-        plain_text = soup.get_text()
-        plain_text = '!' + plain_text.split('!', 1)[1].strip()
-        
-        soup = BeautifulSoup(plain_text, 'html.parser')
         for link in soup.findAll('a'):
             link.replace_with(link.get('href'))
+        for br in soup.findAll('br'):
+            br.replace_with('\n')
         plain_text = str(soup)
+        plain_text = '!' + '!'.join(plain_text.split('!', 1)[1:])
+        plain_text = plain_text.split('</p>')[0]
+        print(plain_text)
+        
         plain_text = plain_text.replace("–", "--")
         plain_text = plain_text.replace("&amp;", "&")
         plain_text = plain_text.replace("&lt;", "<")
