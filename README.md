@@ -20,7 +20,7 @@ python3 main.py
 
 ## TODOs
 - [ ] grab notifications asynchronously
-- [ ] implement timer-after-last-comment
+- [x] implement timer-after-last-comment
 - [ ] better configuration format
 - [ ] properly comment code (sisyphean task)
 - [x] chaining commands
