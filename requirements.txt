@@ -1,0 +1,6 @@
+mastodon.py
+python-dotenv
+beautifulsoup4
+libvirt-python
+opencv-python-headless
+pytesseract
