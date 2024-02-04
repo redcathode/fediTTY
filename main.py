@@ -173,6 +173,7 @@ def post_image_and_log_response():
                 
             else:
                 print(f"Most favorited response: {plain_text}")
+            time.sleep(5)
                 # print(f"Most favorited response: {most_favorited_response['status']['content']}")
     else:
         print("No responses received.")
