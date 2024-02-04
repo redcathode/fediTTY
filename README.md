@@ -8,4 +8,5 @@ source for the fediverse bot (currently) at [@tty@fedi.computernewb.com](https:/
 - Then...
 ```shell
 pip install -r requirements.txt
-python3 main.py```
+python3 main.py
+```
