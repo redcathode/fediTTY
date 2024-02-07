@@ -132,7 +132,7 @@ def post_image_and_log_response():
             br.replace_with('\n')
         plain_text = str(soup)
         plain_text = '!' + '!'.join(plain_text.split('!', 1)[1:])
-        plain_text = plain_text.split('</p>')[0]
+        plain_text = plain_text.split('</')[0]
         print(plain_text)
         
         plain_text = plain_text.replace("–", "--")
@@ -147,7 +147,7 @@ def post_image_and_log_response():
         
         
         author_username = most_favorited_response['username']
-        mastodon.status_post(f"Selected response:\n{plain_text}\nposted by @{author_username}\nPosting a screenshot in {TIME_ANNOUNCEMENT_STRING}!", visibility=POST_VISIBILITY)
+        mastodon.status_post(f"Selected response:\n{plain_text}\nposted by @{author_username}\nPosting a screenshot {TIME_ANNOUNCEMENT_STRING}!", visibility=POST_VISIBILITY)
         commands = plain_text.split('\n')
         for command in commands:
             command = command.strip()

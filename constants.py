@@ -118,7 +118,8 @@ non_letter_with_shift = {
     '"': (42, char_to_keycode["'"]),
     '?': (42, char_to_keycode['/']),
     '>': (42, char_to_keycode['.']),
-    '<': (42, char_to_keycode[','])
+    '<': (42, char_to_keycode[',']),
+    '~': (42, char_to_keycode['`'])
 }
 
 special_keys_mapping = {
