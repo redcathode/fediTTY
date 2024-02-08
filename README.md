@@ -25,3 +25,5 @@ python3 main.py
 - [ ] properly comment code (sisyphean task)
 - [x] chaining commands
 - [x] !key command
+- [ ] avoid trying to grab deleted comments (high prio)
+- [ ] fix mentions
