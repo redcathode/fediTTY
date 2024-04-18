@@ -26,4 +26,4 @@ python3 main.py
 - [x] chaining commands
 - [x] !key command
 - [ ] avoid trying to grab deleted comments (high prio)
-- [ ] fix mentions
+- [x] fix mentions
