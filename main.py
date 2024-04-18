@@ -74,7 +74,7 @@ def handle_mentions(original_post_id):
                         valid_responses.append({
                             'response_id': response_status['id'],
                             'original_comment_id': notification['status']['id'], 
-                            'username': notification['account']['username'],
+                            'username': notification['account']['acct'],
                             'favorites_count': 0
                         })
                         processed_mentions.add(mention_id)  
